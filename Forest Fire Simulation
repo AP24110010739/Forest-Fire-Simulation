@@ -1,0 +1,100 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+
+#define N 30
+#define STEPS 200
+
+#define EMPTY 0
+#define TREE 1
+#define FIRE 2
+
+int prob(float p) {
+    return ((float)rand() / RAND_MAX) < p;
+}
+
+void print_grid(int g[N][N], int step) {
+    printf("\nStep %d\n", step);
+    for(int i=0;i<N;i++) {
+        for(int j=0;j<N;j++) {
+            if(g[i][j]==EMPTY) printf(".");
+            else if(g[i][j]==TREE) printf("T");
+            else if(g[i][j]==FIRE) printf("F");
+        }
+        printf("\n");
+    }
+}
+
+int has_neighbor_fire(int g[N][N], int x, int y) {
+    for(int dx=-1;dx<=1;dx++) {
+        for(int dy=-1;dy<=1;dy++) {
+            if(dx==0 && dy==0) continue;
+            int nx=x+dx;
+            int ny=y+dy;
+            if(nx<0||ny<0||nx>=N||ny>=N) continue;
+            if(g[nx][ny]==FIRE) return 1;
+        }
+    }
+    return 0;
+}
+
+int count_fire(int g[N][N]) {
+    int c=0;
+    for(int i=0;i<N;i++)
+        for(int j=0;j<N;j++)
+            if(g[i][j]==FIRE) c++;
+    return c;
+}
+
+int main() {
+    srand(time(NULL));
+
+    int grid[N][N];
+    int next[N][N];
+
+    float igniteProb = 0.75;
+    float regrowProb = 0.02;
+    float lightningProb = 0.004;
+
+    for(int i=0;i<N;i++)
+        for(int j=0;j<N;j++)
+            grid[i][j]=TREE;
+
+    for(int i=0;i<N;i++)
+        grid[i][0]=FIRE;
+
+    for(int step=0;step<=STEPS;step++) {
+        print_grid(grid,step);
+
+        int burning=count_fire(grid);
+        if(burning==0) {
+            printf("\nFire extinguished at step %d\n",step);
+            break;
+        }
+
+        for(int i=0;i<N;i++) {
+            for(int j=0;j<N;j++) {
+                if(grid[i][j]==EMPTY) {
+                    if(prob(regrowProb)) next[i][j]=TREE;
+                    else next[i][j]=EMPTY;
+                } else if(grid[i][j]==TREE) {
+                    int b=has_neighbor_fire(grid,i,j);
+                    if(b && prob(igniteProb))
+                        next[i][j]=FIRE;
+                    else if(prob(lightningProb))
+                        next[i][j]=FIRE;
+                    else
+                        next[i][j]=TREE;
+                } else if(grid[i][j]==FIRE) {
+                    next[i][j]=EMPTY;
+                }
+            }
+        }
+
+        for(int i=0;i<N;i++)
+            for(int j=0;j<N;j++)
+                grid[i][j]=next[i][j];
+    }
+
+    return 0;
+}
